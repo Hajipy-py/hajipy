@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hajipy 的主页</title>
+
+<script>
+    (function () {
+        var saved = localStorage.getItem('hajipy-theme');
+        if (saved === 'light' || saved === 'dark') {
+            document.documentElement.setAttribute('data-theme', saved);
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+    })();
+</script>
+
+<style>
+/* ===== 深色主题（默认）===== */
+:root,
+html[data-theme="dark"] {
+    --theme-1: #2983cc;
+    --theme-2: #4a9eff;
+    --href: #2983cc;
+    --bili: #fb7299;
+    --bili-hover: #ff85a8;
+
+    --bg: #1a1a1a;
+    --card: #2b2b2b;
+    --card-hover: #333;
+    --hover: #383838;
+    --text: #e8e8e8;
+    --text-dim: #9a9a9a;
+    --border: #3c3c3c;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+
+    --glow-1: rgba(41, 131, 204, 0.15);
+    --glow-2: rgba(251, 114, 153, 0.10);
+
+    --header-bg: rgba(43, 43, 43, 0.45);
+
+    /* 玻璃：更通透 */
+    --glass-bg: rgba(255, 255, 255, 0.04);
+    --glass-bg-hover: rgba(255, 255, 255, 0.09);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --glass-border-hover: rgba(255, 255, 255, 0.32);
+    --glass-highlight: rgba(255, 255, 255, 0.28);
+    --glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+
+    --hero-title-from: #ffffff;
+    --hero-title-to: #a8d0f0;
+
+    --code-bg: rgba(255, 255, 255, 0.08);
+}
+
+/* ===== 浅色主题 ===== */
+html[data-theme="light"] {
+    --theme-1: #1a6fbf;
+    --theme-2: #2983cc;
+    --href: #1a6fbf;
+    --bili: #e85d84;
+    --bili-hover: #d94a72;
+
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --card-hover: #ffffff;
+    --hover: #eef1f5;
+    --text: #1f2328;
+    --text-dim: #6b7280;
+    --border: #e2e6ea;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+
+    --glow-1: rgba(41, 131, 204, 0.12);
+    --glow-2: rgba(251, 114, 153, 0.08);
+
+    --header-bg: rgba(255, 255, 255, 0.55);
+
+    /* 玻璃：更通透 */
+    --glass-bg: rgba(255, 255, 255, 0.35);
+    --glass-bg-hover: rgba(255, 255, 255, 0.55);
+    --glass-border: rgba(0, 0, 0, 0.10);
+    --glass-border-hover: rgba(0, 0, 0, 0.20);
+    --glass-highlight: rgba(255, 255, 255, 0.95);
+    --glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+
+    --hero-title-from: #1a6fbf;
+    --hero-title-to: #4a9eff;
+
+    --code-bg: rgba(0, 0, 0, 0.06);
+}
+
+:root {
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    /* 更强的模糊，配合低透明度形成"通透玻璃" */
+    --glass-blur: 20px;
+    --glass-saturate: 1.8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    min-height: 100%;
+    font-family: 'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    transition: background 0.3s, color 0.3s;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(circle at 15% 20%, var(--glow-1), transparent 40%),
+        radial-gradient(circle at 85% 75%, var(--glow-2), transparent 45%);
+    pointer-events: none;
+    z-index: 0;
+    transition: opacity 0.3s;
+}
+
+/* ===== 顶部导航 ===== */
+header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    height: 56px;
+    padding: 0 28px;
+    background: var(--header-bg);
+    backdrop-filter: blur(20px) saturate(1.6);
+    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+    border-bottom: 1px solid var(--glass-border);
+    transition: background 0.3s, border-color 0.3s;
+}
+
+header .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+header .logo .mark {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(41, 131, 204, 0.4);
+    flex-shrink: 0;
+}
+header .logo .mark img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+header nav {
+    margin-left: auto;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+/* ===== 玻璃按钮（更通透）===== */
+.glass-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 14px;
+    color: var(--text);
+    text-decoration: none;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    box-shadow:
+        inset 0 1px 0 var(--glass-highlight),
+        var(--glass-shadow);
+    transition: background 0.2s, transform 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
+    cursor: pointer;
+    font-family: inherit;
+    overflow: hidden;
+}
+
+/* 顶部高光条：增强玻璃质感 */
+.glass-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent,
+        var(--glass-highlight),
+        transparent);
+    pointer-events: none;
+}
+
+.glass-btn:hover {
+    background: var(--glass-bg-hover);
+    border-color: var(--glass-border-hover);
+    transform: translateY(-1px);
+    box-shadow:
+        inset 0 1px 0 var(--glass-highlight),
+        0 6px 20px rgba(0, 0, 0, 0.18);
+}
+.glass-btn:active {
+    transform: translateY(0);
+    background: var(--glass-bg);
+}
+.glass-btn svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
+/* B 站按钮 */
+.glass-btn.bili {
+    color: var(--bili);
+    border-color: color-mix(in srgb, var(--bili) 40%, transparent);
+}
+.glass-btn.bili::before {
+    background: linear-gradient(90deg,
+        transparent,
+        color-mix(in srgb, var(--bili) 60%, #fff),
+        transparent);
+}
+.glass-btn.bili:hover {
+    background: color-mix(in srgb, var(--bili) 12%, var(--glass-bg-hover));
+    border-color: color-mix(in srgb, var(--bili) 70%, transparent);
+    color: var(--bili-hover);
+}
+.glass-btn.bili svg {
+    color: var(--bili);
+    opacity: 1;
+}
+
+/* 主题切换按钮 */
+.theme-toggle {
+    padding: 7px 10px;
+}
+.theme-toggle .icon-sun,
+.theme-toggle .icon-moon {
+    display: none;
+}
+html[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+html[data-theme="light"] .theme-toggle .icon-moon { display: block; }
+
+/* ===== 主内容 ===== */
+main {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 60px 28px 80px;
+}
+
+.hero {
+    text-align: center;
+    margin-bottom: 56px;
+}
+
+.hero .avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto 20px;
+    padding: 3px;
+    background: linear-gradient(135deg, var(--theme-1), var(--theme-2));
+    box-shadow: 0 6px 28px rgba(41, 131, 204, 0.35);
+    position: relative;
+}
+.hero .avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+    background: var(--card);
+}
+
+.hero h1 {
+    font-size: 34px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, var(--hero-title-from), var(--hero-title-to));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: background 0.3s;
+}
+
+.hero p {
+    color: var(--text-dim);
+    font-size: 16px;
+    transition: color 0.3s;
+}
+
+.hero-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+.hero-actions .glass-btn {
+    padding: 8px 18px;
+    font-size: 14px;
+}
+
+/* ===== 卡片网格 ===== */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    display: block;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    text-decoration: none;
+    color: var(--text);
+    transition: transform 0.18s, border-color 0.18s, background 0.18s, box-shadow 0.18s, color 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+html[data-theme="light"] .card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+html[data-theme="light"] .card:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--theme-1), var(--theme-2));
+    opacity: 0;
+    transition: opacity 0.18s;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    background: var(--card-hover);
+    border-color: var(--theme-1);
+}
+.card:hover::before { opacity: 1; }
+
+.card .icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: inset 0 1px 0 var(--glass-highlight);
+    color: var(--theme-2);
+    transition: background 0.3s, border-color 0.3s, color 0.3s;
+}
+.card .icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.card h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.card p {
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    transition: color 0.3s;
+}
+
+.card code {
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'Consolas', monospace;
+    font-size: 13px;
+    transition: background 0.3s;
+}
+
+.card .arrow {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    color: var(--theme-2);
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.18s, transform 0.18s;
+}
+.card .arrow svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+.card:hover .arrow {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.card.python {
+    border-color: color-mix(in srgb, var(--theme-1) 50%, transparent);
+    background: linear-gradient(160deg, color-mix(in srgb, var(--theme-1) 8%, var(--card)), var(--card));
+}
+.card.python .icon {
+    background: color-mix(in srgb, var(--theme-1) 18%, transparent);
+    border-color: color-mix(in srgb, var(--theme-2) 35%, transparent);
+    color: var(--theme-2);
+}
+
+.card.bili {
+    border-color: color-mix(in srgb, var(--bili) 45%, transparent);
+    background: linear-gradient(160deg, color-mix(in srgb, var(--bili) 8%, var(--card)), var(--card));
+}
+.card.bili::before {
+    background: linear-gradient(90deg, var(--bili), color-mix(in srgb, var(--bili) 60%, #fff));
+}
+.card.bili:hover {
+    border-color: var(--bili);
+}
+.card.bili .icon {
+    background: color-mix(in srgb, var(--bili) 18%, transparent);
+    border-color: color-mix(in srgb, var(--bili) 40%, transparent);
+    color: var(--bili);
+}
+.card.bili .arrow { color: var(--bili); }
+
+/* ===== 页脚 ===== */
+footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 32px 20px;
+    font-size: 13px;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+    transition: color 0.3s, border-color 0.3s;
+}
+footer a {
+    color: var(--theme-2);
+    text-decoration: none;
+}
+footer a:hover { text-decoration: underline; }
+
+.about-link {
+    color: var(--bili);
+    text-decoration: none;
+    font-weight: 600;
+}
+.about-link:hover { text-decoration: underline; }
+
+/* 响应式 */
+@media (max-width: 600px) {
+    header { padding: 0 16px; }
+    header nav { gap: 8px; }
+    .glass-btn { padding: 6px 10px; font-size: 13px; }
+    .glass-btn span { display: none; }
+    .theme-toggle { padding: 6px 8px; }
+    main { padding: 40px 16px 60px; }
+    .hero h1 { font-size: 26px; }
+    .hero .avatar { width: 80px; height: 80px; }
+    .hero-actions .glass-btn span { display: inline; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <a class="logo" href="index.html">
+        <span class="mark">
+            <img src="image.png" alt="Hajipy 头像">
+        </span>
+        <span>Hajipy</span>
+    </a>
+    <nav>
+        <!-- Python Editor：新标签页 -->
+        <a class="glass-btn" href="PythonEditor.html" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6"></polyline>
+                <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+            <span>Python Editor</span>
+        </a>
+        <!-- B 站：新标签页 -->
+        <a class="glass-btn bili" href="https://space.bilibili.com/3546792612333833" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.813 4.653h.854c1.51.054 2.769.578 3.773 1.574 1.004.995 1.524 2.249 1.56 3.76v7.36c-.036 1.51-.556 2.769-1.56 3.773s-2.262 1.524-3.773 1.56H5.333c-1.51-.036-2.769-.556-3.773-1.56S.036 18.858 0 17.347v-7.36c.036-1.511.556-2.765 1.56-3.76 1.004-.996 2.262-1.52 3.773-1.574h.774l-1.174-1.12a1.234 1.234 0 0 1-.373-.906c0-.356.124-.658.373-.907l.027-.027c.267-.249.573-.373.92-.373.347 0 .653.124.92.373L9.653 4.44c.071.071.134.142.187.213h4.267a.836.836 0 0 1 .16-.213l2.853-2.747c.267-.249.573-.373.92-.373.347 0 .662.151.929.4.267.249.391.551.391.907 0 .355-.124.657-.373.906zM5.333 7.24c-.746.018-1.373.276-1.88.773-.506.498-.769 1.13-.786 1.894v7.52c.017.764.28 1.395.786 1.893.507.498 1.134.756 1.88.773h13.334c.746-.017 1.373-.275 1.88-.773.506-.498.769-1.129.786-1.893v-7.52c-.017-.765-.28-1.396-.786-1.894-.507-.497-1.134-.755-1.88-.773zM8 11.107c.373 0 .684.124.933.373.25.249.383.569.4.96v1.173c-.017.391-.15.711-.4.96-.249.25-.56.374-.933.374s-.684-.125-.933-.374c-.25-.249-.383-.569-.4-.96V12.44c0-.373.129-.689.386-.947.258-.257.574-.386.947-.386zm8 0c.373 0 .684.124.933.373.25.249.383.569.4.96v1.173c-.017.391-.15.711-.4.96-.249.25-.56.374-.933.374s-.684-.125-.933-.374c-.25-.249-.383-.569-.4-.96V12.44c.017-.391.15-.711.4-.96.249-.249.56-.373.933-.373z"/>
+            </svg>
+            <span>B 站</span>
+        </a>
+        <!-- 主题切换：按钮，不跳转 -->
+        <button class="glass-btn theme-toggle" id="theme-toggle" title="切换主题" aria-label="切换主题">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        </button>
+        <!-- 关于：页内锚点，不新开 -->
+        <a class="glass-btn" href="#about">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span>关于</span>
+        </a>
+    </nav>
+</header>
+
+<main>
+
+    <section class="hero">
+        <div class="avatar">
+            <img src="image.png" alt="Hajipy 头像">
+        </div>
+        <h1>Hajipy 的主页</h1>
+        <p>写代码、做工具、折腾网页</p>
+
+        <div class="hero-actions">
+            <a class="glass-btn bili" href="https://space.bilibili.com/3546792612333833" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.813 4.653h.854c1.51.054 2.769.578 3.773 1.574 1.004.995 1.524 2.249 1.56 3.76v7.36c-.036 1.51-.556 2.769-1.56 3.773s-2.262 1.524-3.773 1.56H5.333c-1.51-.036-2.769-.556-3.773-1.56S.036 18.858 0 17.347v-7.36c.036-1.511.556-2.765 1.56-3.76 1.004-.996 2.262-1.52 3.773-1.574h.774l-1.174-1.12a1.234 1.234 0 0 1-.373-.906c0-.356.124-.658.373-.907l.027-.027c.267-.249.573-.373.92-.373.347 0 .653.124.92.373L9.653 4.44c.071.071.134.142.187.213h4.267a.836.836 0 0 1 .16-.213l2.853-2.747c.267-.249.573-.373.92-.373.347 0 .662.151.929.4.267.249.391.551.391.907 0 .355-.124.657-.373.906zM5.333 7.24c-.746.018-1.373.276-1.88.773-.506.498-.769 1.13-.786 1.894v7.52c.017.764.28 1.395.786 1.893.507.498 1.134.756 1.88.773h13.334c.746-.017 1.373-.275 1.88-.773.506-.498.769-1.129.786-1.893v-7.52c-.017-.765-.28-1.396-.786-1.894-.507-.497-1.134-.755-1.88-.773zM8 11.107c.373 0 .684.124.933.373.25.249.383.569.4.96v1.173c-.017.391-.15.711-.4.96-.249.25-.56.374-.933.374s-.684-.125-.933-.374c-.25-.249-.383-.569-.4-.96V12.44c0-.373.129-.689.386-.947.258-.257.574-.386.947-.386zm8 0c.373 0 .684.124.933.373.25.249.383.569.4.96v1.173c-.017.391-.15.711-.4.96-.249.25-.56.374-.933.374s-.684-.125-.933-.374c-.25-.249-.383-.569-.4-.96V12.44c.017-.391.15-.711.4-.96.249-.249.56-.373.933-.373z"/>
+                </svg>
+                <span>关注我的 B 站</span>
+            </a>
+            <a class="glass-btn" href="PythonEditor.html" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 18 22 12 16 6"></polyline>
+                    <polyline points="8 6 2 12 8 18"></polyline>
+                </svg>
+                <span>打开 Python Editor</span>
+            </a>
+        </div>
+    </section>
+
+    <section id="tools">
+        <div class="grid">
+
+            <a class="card python" href="PythonEditor.html" target="_blank" rel="noopener">
+                <div class="icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="16 18 22 12 16 6"></polyline>
+                        <polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
+                </div>
+                <h3>Python Editor</h3>
+                <p>基于 Pyodide + Monaco 的网页版 Python 编辑器，支持自动补全、语法高亮和在线运行。</p>
+                <span class="arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </span>
+            </a>
+
+            <a class="card bili" href="https://space.bilibili.com/3546792612333833" target="_blank" rel="noopener">
+                <div class="icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.813 4.653h.854c1.51.054 2.769.578 3.773 1.574 1.004.995 1.524 2.249 1.56 3.76v7.36c-.036 1.51-.556 2.769-1.56 3.773s-2.262 1.524-3.773 1.56H5.333c-1.51-.036-2.769-.556-3.773-1.56S.036 18.858 0 17.347v-7.36c.036-1.511.556-2.765 1.56-3.76 1.004-.996 2.262-1.52 3.773-1.574h.774l-1.174-1.12a1.234 1.234 0 0 1-.373-.906c0-.356.124-.658.373-.907l.027-.027c.267-.249.573-.373.92-.373.347 0 .653.124.92.373L9.653 4.44c.071.071.134.142.187.213h4.267a.836.836 0 0 1 .16-.213l2.853-2.747c.267-.249.573-.373.92-.373.347 0 .662.151.929.4.267.249.391.551.391.907 0 .355-.124.657-.373.906zM5.333 7.24c-.746.018-1.373.276-1.88.773-.506.498-.769 1.13-.786 1.894v7.52c.017.764.28 1.395.786 1.893.507.498 1.134.756 1.88.773h13.334c.746-.017 1.373-.275 1.88-.773.506-.498.769-1.129.786-1.893v-7.52c-.017-.765-.28-1.396-.786-1.894-.507-.497-1.134-.755-1.88-.773zM8 11.107c.373 0 .684.124.933.373.25.249.383.569.4.96v1.173c-.017.391-.15.711-.4.96-.249.25-.56.374-.933.374s-.684-.125-.933-.374c-.25-.249-.383-.569-.4-.96V12.44c0-.373.129-.689.386-.947.258-.257.574-.386.947-.386zm8 0c.373 0 .684.124.933.373.25.249.383.569.4.96v1.173c-.017.391-.15.711-.4.96-.249.25-.56.374-.933.374s-.684-.125-.933-.374c-.25-.249-.383-.569-.4-.96V12.44c.017-.391.15-.711.4-.96.249-.249.56-.373.933-.373z"/>
+                    </svg>
+                </div>
+                <h3>B 站主页</h3>
+                <p>在 B 站关注我，看视频、直播和日常分享。</p>
+                <span class="arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </span>
+            </a>
+
+            <a class="card" href="#">
+                <div class="icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </div>
+                <h3>项目归档</h3>
+                <p>这里可以放你的其他项目入口，把 <code>href="#"</code> 换成实际链接即可。</p>
+                <span class="arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </span>
+            </a>
+
+            <a class="card" href="#">
+                <div class="icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </div>
+                <h3>笔记 / 博客</h3>
+                <p>记录学习过程、踩坑经验和技术总结。</p>
+                <span class="arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </span>
+            </a>
+
+        </div>
+    </section>
+
+    <section id="about" style="margin-top: 56px;">
+        <h2 style="font-size: 20px; margin-bottom: 12px;">关于我</h2>
+        <p style="color: var(--text-dim); font-size: 15px;">
+            网名 <strong style="color: var(--theme-2);">Hajipy</strong>，
+            喜欢折腾网页、Python 和各种小工具。
+            在 B 站也能找到我：
+            <a class="about-link" href="https://space.bilibili.com/3546792612333833" target="_blank" rel="noopener">
+                space.bilibili.com/3546792612333833
+            </a>
+        </p>
+    </section>
+
+</main>
+
+<footer>
+    © <span id="year"></span> Hajipy · Built with HTML & CSS
+</footer>
+
+<script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    (function () {
+        var html = document.documentElement;
+        var btn = document.getElementById('theme-toggle');
+
+        btn.addEventListener('click', function () {
+            var current = html.getAttribute('data-theme');
+            var next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('hajipy-theme', next);
+        });
+
+        if (window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function (e) {
+                if (!localStorage.getItem('hajipy-theme')) {
+                    html.setAttribute('data-theme', e.matches ? 'light' : 'dark');
+                }
+            });
+        }
+    })();
+</script>
+
+</body>
+</html>
