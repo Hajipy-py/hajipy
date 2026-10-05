@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Code Editor 网页版</title>
+
+<script>
+    (function () {
+        var saved = localStorage.getItem('hajipy-editor-theme');
+        if (saved === 'light' || saved === 'dark') {
+            document.documentElement.setAttribute('data-theme', saved);
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+    })();
+</script>
+
+<style>
+/* ===== 深色主题 ===== */
+:root,
+html[data-theme="dark"] {
+    --theme-1: #2983cc;
+    --theme-2: #4a9eff;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --bg: #202020;
+    --card: #2b2b2b;
+    --titbar: #2d2d2d;
+    --text: #e8e8e8;
+    --text-dim: #9a9a9a;
+    --border: #3c3c3c;
+
+    --output-bg: #0f0f0f;
+    --output-text: #f8f8f2;
+    --output-error: #f48771;
+    --output-success: #89d185;
+    --output-info: #569cd6;
+    --output-heading: #4ec9b0;
+    --output-code-bg: #1e1e1e;
+    --output-quote: #6a9955;
+    --output-link: #4a9eff;
+
+    --btn-bg: #3a3a3a;
+    --btn-hover: #484848;
+    --btn-text: #d0d0d0;
+
+    --splitter-bg: #3c3c3c;
+    --splitter-hover: var(--theme-2);
+    --splitter-active: var(--theme-1);
+
+    --menu-bg: #2b2b2b;
+    --menu-hover: #3a3a3a;
+    --menu-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+    --input-bg: #1e1e1e;
+    --input-border: #444;
+    --input-focus: var(--theme-2);
+    --match-bg: rgba(255, 200, 0, 0.35);
+    --match-current: rgba(255, 140, 0, 0.6);
+
+    --editor-font-size: 15px;
+}
+
+/* ===== 浅色主题 ===== */
+html[data-theme="light"] {
+    --theme-1: #1a6fbf;
+    --theme-2: #2983cc;
+    --bg: #f0f2f5;
+    --card: #ffffff;
+    --titbar: #f7f8fa;
+    --text: #1f2328;
+    --text-dim: #6b7280;
+    --border: #d8dde3;
+
+    --output-bg: #fafbfc;
+    --output-text: #1f2328;
+    --output-error: #d73a49;
+    --output-success: #22863a;
+    --output-info: #0366d6;
+    --output-heading: #0550ae;
+    --output-code-bg: #f0f2f5;
+    --output-quote: #6a737d;
+    --output-link: #0969da;
+
+    --btn-bg: #e8ecf1;
+    --btn-hover: #dde2e8;
+    --btn-text: #1f2328;
+
+    --splitter-bg: #e2e6ea;
+    --splitter-hover: var(--theme-2);
+    --splitter-active: var(--theme-1);
+
+    --menu-bg: #ffffff;
+    --menu-hover: #e8ecf1;
+    --menu-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+
+    --input-bg: #ffffff;
+    --input-border: #d8dde3;
+    --input-focus: var(--theme-2);
+    --match-bg: rgba(255, 200, 0, 0.5);
+    --match-current: rgba(255, 140, 0, 0.7);
+
+    --editor-font-size: 15px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.25s, color 0.25s;
+}
+
+.window.editor {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: var(--card);
+    overflow: hidden;
+}
+
+/* ===== 标题栏 ===== */
+.window.editor .titbar {
+    display: flex;
+    align-items: center;
+    height: 42px;
+    padding: 0 12px;
+    background: var(--titbar);
+    border-bottom: 1px solid var(--border);
+    user-select: none;
+    flex-shrink: 0;
+    gap: 8px;
+}
+.window.editor .titbar .icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 4px;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23377ab3' d='M12 2C6.5 2 6 4.5 6 6v3h6v1H4.5C2.5 10 1 11.5 1 14s1.5 4 3.5 4H7v-3c0-1.5 1.5-3 3-3h6c1.5 0 3-1.5 3-3V6c0-1.5-1.5-4-7-4zM9 4.5a1 1 0 110 2 1 1 0 010-2z'/><path fill='%23f7c948' d='M12 22c5.5 0 6-2.5 6-4v-3h-6v-1h7.5c2 0 3.5-1.5 3.5-4s-1.5-4-3.5-4H17v3c0 1.5-1.5 3-3 3H8c-1.5 0-3 1.5-3 3v3c0 1.5 1.5 4 7 4zm3-2.5a1 1 0 110-2 1 1 0 010 2z'/></svg>") center/contain no-repeat;
+    flex-shrink: 0;
+}
+.window.editor .titbar p {
+    margin: 0;
+    font-size: 14px;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.lang-select {
+    height: 28px;
+    padding: 0 10px;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+}
+.lang-select:hover { background: var(--btn-hover); }
+.font-size-display {
+    font-size: 12px;
+    color: var(--text-dim);
+    min-width: 44px;
+    text-align: center;
+    padding: 0 4px;
+    user-select: none;
+}
+.window.editor .titbar .run {
+    font-size: 14px;
+    padding: 0 16px;
+    background: var(--theme-1);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    flex-shrink: 0;
+}
+.window.editor .titbar .run:hover { background: var(--theme-2); }
+.window.editor .titbar .run:disabled { background: #888; cursor: not-allowed; opacity: 0.6; }
+.window.editor .titbar .run i { font-style: normal; font-size: 11px; }
+
+.theme-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.theme-btn:hover { background: var(--btn-hover); }
+.theme-btn svg { width: 15px; height: 15px; }
+.theme-btn .icon-sun,
+.theme-btn .icon-moon { display: none; }
+html[data-theme="dark"] .theme-btn .icon-sun { display: block; }
+html[data-theme="light"] .theme-btn .icon-moon { display: block; }
+
+/* ===== 编辑器主体 ===== */
+#win-editor {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+    position: relative;
+}
+#editor-pane {
+    flex: 0 0 60%;
+    min-height: 80px;
+    overflow: hidden;
+    background: var(--card);
+    position: relative;
+}
+#monaco-editor {
+    width: 100%;
+    height: 100%;
+    background: var(--card);
+    -webkit-touch-callout: none;
+}
+#splitter {
+    flex: 0 0 6px;
+    background: var(--splitter-bg);
+    cursor: row-resize;
+    position: relative;
+    user-select: none;
+    touch-action: none;
+}
+#splitter::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 32px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--text-dim);
+    opacity: 0.5;
+}
+#splitter:hover { background: var(--splitter-hover); }
+#splitter.dragging { background: var(--splitter-active); }
+#output-pane {
+    flex: 1 1 40%;
+    min-height: 60px;
+    overflow: hidden;
+}
+
+/* ===== 输出区 ===== */
+#win-editor .output {
+    background-color: var(--output-bg);
+    color: var(--output-text);
+    padding: 12px 16px;
+    width: 100%;
+    height: 100%;
+    font: 14px / 1.6 'Consolas', 'Monaco', 'Menlo', 'Courier New', monospace;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    -webkit-user-select: auto;
+    user-select: auto;
+    outline: none;
+    margin: 0;
+    border: none;
+}
+#win-editor .output::selection { background: var(--theme-2); color: #fff; }
+#win-editor .output .error { color: var(--output-error); }
+#win-editor .output .success { color: var(--output-success); }
+#win-editor .output .info { color: var(--output-info); }
+
+/* Markdown */
+.md-body {
+    font-family: -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--output-text);
+    white-space: normal;
+}
+.md-body h1, .md-body h2, .md-body h3, .md-body h4 {
+    color: var(--output-heading);
+    margin: 18px 0 10px;
+    font-weight: 600;
+}
+.md-body h1 { font-size: 24px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+.md-body h2 { font-size: 20px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+.md-body h3 { font-size: 17px; }
+.md-body h4 { font-size: 15px; }
+.md-body p { margin: 10px 0; }
+.md-body a { color: var(--output-link); text-decoration: none; }
+.md-body a:hover { text-decoration: underline; }
+.md-body code {
+    background: var(--output-code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    color: var(--output-heading);
+}
+.md-body pre {
+    background: var(--output-code-bg);
+    padding: 12px 14px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 12px 0;
+    border: 1px solid var(--border);
+}
+.md-body pre code { background: none; padding: 0; color: var(--output-text); font-size: 13px; }
+.md-body blockquote {
+    margin: 12px 0;
+    padding: 8px 16px;
+    border-left: 3px solid var(--output-quote);
+    color: var(--output-quote);
+    background: var(--output-code-bg);
+    border-radius: 0 4px 4px 0;
+}
+.md-body ul, .md-body ol { margin: 10px 0; padding-left: 26px; }
+.md-body li { margin: 5px 0; }
+.md-body hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+.md-body table { border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+.md-body th, .md-body td { border: 1px solid var(--border); padding: 6px 12px; }
+.md-body th { background: var(--output-code-bg); font-weight: 600; }
+
+/* JSON */
+.json-tree {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--output-text);
+    white-space: normal;
+}
+.json-tree .json-key { color: var(--output-info); }
+.json-tree .json-string { color: var(--output-success); }
+.json-tree .json-number { color: var(--output-error); }
+.json-tree .json-boolean { color: var(--output-heading); }
+.json-tree .json-null { color: var(--text-dim); }
+.json-tree .json-bracket { color: var(--text-dim); }
+.json-tree ul { list-style: none; margin: 0; padding-left: 20px; border-left: 1px dashed var(--border); }
+.json-tree > ul { border-left: none; padding-left: 0; }
+.json-tree li { margin: 2px 0; }
+
+.html-preview {
+    display: block;
+    width: 100%;
+    height: calc(100% - 10px);
+    min-height: 200px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: #fff;
+}
+
+/* 状态栏 */
+.statusbar {
+    height: 26px;
+    background: var(--titbar);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+    gap: 16px;
+    flex-shrink: 0;
+}
+.statusbar .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f0ad4e;
+    display: inline-block;
+    margin-right: 6px;
+}
+.statusbar .dot.ready { background: #89d185; }
+.statusbar .dot.error { background: #f48771; }
+.statusbar .dot.loading { background: #f0ad4e; }
+
+/* 缩放提示 */
+.zoom-toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: rgba(0, 0, 0, 0.78);
+    color: #fff;
+    padding: 14px 26px;
+    border-radius: 10px;
+    font-size: 22px;
+    font-weight: 600;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 9999;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.zoom-toast.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+body.resizing { user-select: none; cursor: row-resize !important; }
+body.resizing * { cursor: row-resize !important; }
+
+/* 补全图标 */
+.monaco-editor .suggest-widget .monaco-list-row .icon,
+.monaco-editor .suggest-widget .monaco-list-row .codicon,
+.monaco-editor .suggest-widget .monaco-list-row .suggest-icon,
+.monaco-editor .suggest-widget .monaco-list-row .monaco-icon-label::before,
+.monaco-editor .suggest-widget .monaco-list-row .suggest-icon::before {
+    width: calc(var(--editor-font-size, 15px) * 1.2) !important;
+    height: calc(var(--editor-font-size, 15px) * 1.2) !important;
+    font-size: calc(var(--editor-font-size, 15px) * 1.2) !important;
+    line-height: calc(var(--editor-font-size, 15px) * 1.2) !important;
+    min-width: calc(var(--editor-font-size, 15px) * 1.2) !important;
+    background-size: calc(var(--editor-font-size, 15px) * 1.2) calc(var(--editor-font-size, 15px) * 1.2) !important;
+}
+
+/* ===== 自定义右键菜单 ===== */
+.context-menu {
+    position: fixed;
+    z-index: 10000;
+    min-width: 200px;
+    max-width: 280px;
+    background: var(--menu-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--menu-shadow);
+    padding: 6px;
+    opacity: 0;
+    transform: scale(0.96);
+    transform-origin: top left;
+    pointer-events: none;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    font-size: 13.5px;
+    color: var(--text);
+    user-select: none;
+}
+.context-menu.show {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+}
+.context-menu .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.1s;
+    position: relative;
+    white-space: nowrap;
+}
+.context-menu .menu-item:hover,
+.context-menu .menu-item:active {
+    background: var(--menu-hover);
+}
+.context-menu .menu-item.disabled {
+    opacity: 0.35;
+    pointer-events: none;
+}
+.context-menu .menu-item .label {
+    flex: 1;
+}
+.context-menu .menu-item .shortcut {
+    font-size: 11.5px;
+    color: var(--text-dim);
+    margin-left: 20px;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+.context-menu .menu-item.has-submenu::after {
+    content: '›';
+    font-size: 16px;
+    color: var(--text-dim);
+    margin-left: 6px;
+}
+.context-menu .menu-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 6px;
+}
+
+/* 子菜单 */
+.submenu {
+    position: fixed;
+    z-index: 10001;
+    min-width: 160px;
+    background: var(--menu-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--menu-shadow);
+    padding: 6px;
+    display: none;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+.submenu.show { display: block; }
+.submenu .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    white-space: nowrap;
+}
+.submenu .menu-item:hover { background: var(--menu-hover); }
+.submenu .menu-item.disabled { opacity: 0.35; pointer-events: none; }
+
+/* ===== 自定义查找替换面板 ===== */
+.find-panel {
+    position: absolute;
+    top: 8px;
+    right: 20px;
+    z-index: 9998;
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    background: var(--menu-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--menu-shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    font-size: 13.5px;
+    color: var(--text);
+    min-width: 380px;
+    max-width: calc(100% - 40px);
+}
+.find-panel.show { display: flex; }
+.find-panel .row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.find-panel .input-wrap {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+.find-panel input[type="text"] {
+    width: 100%;
+    height: 30px;
+    padding: 0 10px;
+    background: var(--input-bg);
+    color: var(--text);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.find-panel input[type="text"]:focus {
+    border-color: var(--input-focus);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--input-focus) 30%, transparent);
+}
+.find-panel input[type="text"]::placeholder {
+    color: var(--text-dim);
+}
+.find-panel .toggle-group {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+}
+.find-panel .toggle-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    user-select: none;
+    transition: all 0.15s;
+}
+.find-panel .toggle-btn:hover {
+    background: var(--menu-hover);
+    color: var(--text);
+}
+.find-panel .toggle-btn.active {
+    background: var(--theme-1);
+    color: #fff;
+    border-color: var(--theme-1);
+}
+.find-panel .action-btn {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s;
+    flex-shrink: 0;
+}
+.find-panel .action-btn:hover {
+    background: var(--menu-hover);
+}
+.find-panel .action-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+.find-panel .action-btn svg {
+    width: 14px;
+    height: 14px;
+}
+.find-panel .status {
+    font-size: 12px;
+    color: var(--text-dim);
+    min-width: 70px;
+    text-align: center;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+.find-panel .close-btn {
+    width: 28px;
+    height: 28px;
+}
+.find-panel .replace-row {
+    display: none;
+}
+.find-panel.show-replace .replace-row {
+    display: flex;
+}
+
+/* 搜索高亮 */
+.monaco-editor .findMatch {
+    background-color: var(--match-bg) !important;
+    border-radius: 2px;
+}
+.monaco-editor .currentFindMatch {
+    background-color: var(--match-current) !important;
+    border-radius: 2px;
+    outline: 1px solid #ff8c00;
+}
+
+@media (max-width: 700px) {
+    .window.editor .titbar p { display: none; }
+    .lang-select { padding: 0 6px; font-size: 12px; }
+    .window.editor .titbar .run { padding: 0 10px; font-size: 13px; }
+    .window.editor .titbar .run i { display: none; }
+    .font-size-display { display: none; }
+    .context-menu { font-size: 15px; min-width: 200px; }
+    .context-menu .menu-item { padding: 12px 14px; }
+    .find-panel {
+        min-width: auto;
+        right: 8px;
+        left: 8px;
+        max-width: none;
+    }
+    .find-panel input[type="text"] { font-size: 15px; height: 34px; }
+    .find-panel .toggle-btn { width: 32px; height: 32px; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="window editor">
+    <div class="titbar">
+        <p id="title-text">Python Editor</p>
+        <select class="lang-select" id="lang-select" title="选择语言">
+            <option value="python">Python</option>
+            <option value="javascript">JavaScript</option>
+            <option value="html">HTML</option>
+            <option value="markdown">Markdown</option>
+            <option value="json">JSON</option>
+        </select>
+        <span class="font-size-display" id="font-size-display" title="当前字号">15px</span>
+        <button class="theme-btn" id="theme-btn" title="切换主题" aria-label="切换主题">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        </button>
+        <button class="run" id="run-btn" disabled><i>▶</i> 运行</button>
+    </div>
+
+    <div id="win-editor">
+        <div id="editor-pane">
+            <div id="monaco-editor"></div>
+
+            <!-- 自定义查找替换面板 -->
+            <div class="find-panel" id="find-panel">
+                <!-- 查找行 -->
+                <div class="row">
+                    <button class="action-btn" id="find-expand" title="展开替换">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                    <div class="input-wrap">
+                        <input type="text" id="find-input" placeholder="查找" autocomplete="off" spellcheck="false">
+                    </div>
+                    <div class="toggle-group">
+                        <button class="toggle-btn" id="toggle-case" title="区分大小写">Aa</button>
+                        <button class="toggle-btn" id="toggle-word" title="全字匹配">ab</button>
+                        <button class="toggle-btn" id="toggle-regex" title="使用正则表达式">.*</button>
+                    </div>
+                    <span class="status" id="find-status">无结果</span>
+                    <button class="action-btn" id="find-prev" title="查找上一个 (Shift+F3)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                    </button>
+                    <button class="action-btn" id="find-next" title="查找下一个 (F3)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <button class="action-btn close-btn" id="find-close" title="关闭 (Esc)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <!-- 替换行 -->
+                <div class="row replace-row">
+                    <div style="width: 30px; flex-shrink: 0;"></div>
+                    <div class="input-wrap">
+                        <input type="text" id="replace-input" placeholder="替换" autocomplete="off" spellcheck="false">
+                    </div>
+                    <div style="width: 116px; flex-shrink: 0;"></div>
+                    <button class="action-btn" id="replace-one" title="替换">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 10 4 15 9 20"></polyline>
+                            <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
+                        </svg>
+                    </button>
+                    <button class="action-btn" id="replace-all" title="全部替换">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="4 14 8 18 16 10"></polyline>
+                            <polyline points="10 14 14 18 22 10"></polyline>
+                        </svg>
+                    </button>
+                    <div style="width: 30px; flex-shrink: 0;"></div>
+                </div>
+            </div>
+        </div>
+        <div id="splitter" title="拖动调整高度"></div>
+        <div id="output-pane"><pre class="output" id="output">正在加载编辑器...</pre></div>
+    </div>
+
+    <div class="statusbar">
+        <span><span class="dot loading" id="status-dot"></span><span id="status-text">加载中</span></span>
+        <span id="cursor-info">行 1, 列 1</span>
+        <span id="lang-info">Python</span>
+        <span style="margin-left:auto;">Ctrl+Enter 运行 · Ctrl+F 查找 · Ctrl+H 替换 · 右键菜单</span>
+    </div>
+</div>
+
+<div class="zoom-toast" id="zoom-toast">100%</div>
+
+<!-- 自定义右键菜单 -->
+<div class="context-menu" id="context-menu">
+    <div class="menu-item" data-action="undo">
+        <span class="label">撤销</span>
+        <span class="shortcut">Ctrl+Z</span>
+    </div>
+    <div class="menu-item" data-action="redo">
+        <span class="label">重做</span>
+        <span class="shortcut">Ctrl+Y</span>
+    </div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" data-action="cut">
+        <span class="label">剪切</span>
+        <span class="shortcut">Ctrl+X</span>
+    </div>
+    <div class="menu-item" data-action="copy">
+        <span class="label">复制</span>
+        <span class="shortcut">Ctrl+C</span>
+    </div>
+    <div class="menu-item" data-action="paste">
+        <span class="label">粘贴</span>
+        <span class="shortcut">Ctrl+V</span>
+    </div>
+    <div class="menu-item" data-action="selectAll">
+        <span class="label">全选</span>
+        <span class="shortcut">Ctrl+A</span>
+    </div>
+    <div class="menu-divider"></div>
+    <div class="menu-item has-submenu" data-action="find-sub">
+        <span class="label">查找</span>
+        <span class="shortcut">Ctrl+F</span>
+    </div>
+    <div class="menu-item" data-action="replace">
+        <span class="label">替换</span>
+        <span class="shortcut">Ctrl+H</span>
+    </div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" data-action="run">
+        <span class="label">运行代码</span>
+        <span class="shortcut">Ctrl+Enter</span>
+    </div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" data-action="zoomIn">
+        <span class="label">放大字号</span>
+        <span class="shortcut">Ctrl+=</span>
+    </div>
+    <div class="menu-item" data-action="zoomOut">
+        <span class="label">缩小字号</span>
+        <span class="shortcut">Ctrl+-</span>
+    </div>
+    <div class="menu-item" data-action="zoomReset">
+        <span class="label">重置字号</span>
+        <span class="shortcut">Ctrl+0</span>
+    </div>
+</div>
+
+<!-- 查找子菜单 -->
+<div class="submenu" id="submenu-find">
+    <div class="menu-item" data-action="find">
+        <span class="label">打开查找</span>
+        <span class="shortcut">Ctrl+F</span>
+    </div>
+    <div class="menu-item" data-action="findNext">
+        <span class="label">查找下一个</span>
+        <span class="shortcut">F3</span>
+    </div>
+    <div class="menu-item" data-action="findPrev">
+        <span class="label">查找上一个</span>
+        <span class="shortcut">Shift+F3</span>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
+<script src="https://unpkg.com/monaco-editor@0.45.0/min/vs/loader.js"></script>
+
+<script>
+// ===================================================================
+// 默认代码
+// ===================================================================
+const DEFAULT_CODES = {
+    python: `import math
+
+def greet(name):
+    return f"Hello, {name}!"
+
+if __name__ == "__main__":
+    print(greet("World"))
+    print("Pi =", math.pi)
+`,
+    javascript: `// JavaScript 示例
+function greet(name) {
+    return \`Hello, \${name}!\`;
+}
+
+console.log(greet("World"));
+console.log("Pi =", Math.PI);
+
+let sum = 0;
+for (let i = 1; i <= 10; i++) sum += i;
+console.log("1+2+...+10 =", sum);
+`,
+    html: `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>预览</title></head>
+<body style="font-family:sans-serif;padding:20px;text-align:center;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;">
+    <h1>Hello, HTML!</h1>
+    <p>这是实时预览效果</p>
+    <button onclick="alert('按钮被点击了！')" style="padding:10px 24px;font-size:16px;border:none;border-radius:8px;background:#fff;color:#764ba2;cursor:pointer;">点我</button>
+</body>
+</html>
+`,
+    markdown: `# Markdown 预览
+
+这是一个 **Markdown** 实时预览示例。
+
+## 文本格式
+
+- **粗体**、*斜体*、~~删除线~~
+- \`行内代码\`
+
+\`\`\`python
+def hello(name):
+    print(f"Hello, {name}!")
+\`\`\`
+
+> 这是一段引用文字。
+
+| 语言 | 运行方式 |
+|------|----------|
+| Python | Pyodide |
+| JavaScript | 浏览器原生 |
+`,
+    json: `{
+    "name": "Hajipy",
+    "age": 25,
+    "hobbies": ["编程", "阅读", "游戏"],
+    "address": {
+        "city": "北京",
+        "district": "海淀区"
+    },
+    "active": true,
+    "extra": null
+}
+`
+};
+
+const LANG_MODE = {
+    python: 'python',
+    javascript: 'javascript',
+    html: 'html',
+    markdown: 'markdown',
+    json: 'json'
+};
+
+const LANG_LABEL = {
+    python: 'Python',
+    javascript: 'JavaScript',
+    html: 'HTML',
+    markdown: 'Markdown',
+    json: 'JSON'
+};
+
+// ===================================================================
+// 状态
+// ===================================================================
+let editor = null;
+let pyodide = null;
+let currentLang = 'python';
+let editorFontSize = Number(localStorage.getItem('hajipy-editor-font-size')) || 15;
+const MIN_FONT_SIZE = 8;
+const MAX_FONT_SIZE = 48;
+
+// 查找状态
+let findMatches = [];
+let findCurrentIndex = -1;
+let findDecorations = null;
+
+// DOM
+const runBtn = document.getElementById('run-btn');
+const outputEl = document.getElementById('output');
+const statusDot = document.getElementById('status-dot');
+const statusText = document.getElementById('status-text');
+const cursorInfo = document.getElementById('cursor-info');
+const langInfo = document.getElementById('lang-info');
+const langSelect = document.getElementById('lang-select');
+const titleText = document.getElementById('title-text');
+const themeBtn = document.getElementById('theme-btn');
+const fontSizeDisplay = document.getElementById('font-size-display');
+const editorPane = document.getElementById('editor-pane');
+const outputPane = document.getElementById('output-pane');
+const splitter = document.getElementById('splitter');
+const zoomToast = document.getElementById('zoom-toast');
+const contextMenu = document.getElementById('context-menu');
+const submenuFind = document.getElementById('submenu-find');
+
+// 查找面板 DOM
+const findPanel = document.getElementById('find-panel');
+const findInput = document.getElementById('find-input');
+const replaceInput = document.getElementById('replace-input');
+const findStatus = document.getElementById('find-status');
+const findPrevBtn = document.getElementById('find-prev');
+const findNextBtn = document.getElementById('find-next');
+const findCloseBtn = document.getElementById('find-close');
+const findExpandBtn = document.getElementById('find-expand');
+const toggleCaseBtn = document.getElementById('toggle-case');
+const toggleWordBtn = document.getElementById('toggle-word');
+const toggleRegexBtn = document.getElementById('toggle-regex');
+const replaceOneBtn = document.getElementById('replace-one');
+const replaceAllBtn = document.getElementById('replace-all');
+
+// ===================================================================
+// 工具函数
+// ===================================================================
+function setStatus(text, cls) {
+    statusText.textContent = text;
+    statusDot.className = 'dot' + (cls ? ' ' + cls : '');
+}
+
+function getMonacoTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'vs' : 'vs-dark';
+}
+
+let zoomToastTimer = null;
+function showZoomToast(text) {
+    zoomToast.textContent = text;
+    zoomToast.classList.add('show');
+    clearTimeout(zoomToastTimer);
+    zoomToastTimer = setTimeout(() => zoomToast.classList.remove('show'), 700);
+}
+
+function updateFontSizeDisplay() {
+    fontSizeDisplay.textContent = editorFontSize + 'px';
+    document.documentElement.style.setProperty('--editor-font-size', editorFontSize + 'px');
+    if (editor) editor.updateOptions({ fontSize: editorFontSize });
+}
+
+function setFontSize(size, showToast = true) {
+    const newSize = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, Math.round(size)));
+    if (newSize === editorFontSize) return;
+    editorFontSize = newSize;
+    localStorage.setItem('hajipy-editor-font-size', String(editorFontSize));
+    updateFontSizeDisplay();
+    if (showToast) showZoomToast(editorFontSize + 'px');
+    if (editor) { editor.updateOptions({ fontSize: editorFontSize }); editor.layout(); }
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
+// ===================================================================
+// 查找替换（自实现）
+// ===================================================================
+const FindReplace = (function () {
+    let caseSensitive = false;
+    let wholeWord = false;
+    let useRegex = false;
+
+    function getOptions() {
+        return { caseSensitive, wholeWord, useRegex };
+    }
+
+    function buildRegex(term) {
+        if (!term) return null;
+        let pattern = useRegex ? term : term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (wholeWord) pattern = '\\b' + pattern + '\\b';
+        try {
+            return new RegExp(pattern, caseSensitive ? 'g' : 'gi');
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function findMatches() {
+        if (!editor) return [];
+        const model = editor.getModel();
+        const term = findInput.value;
+        if (!term) return [];
+
+        const regex = buildRegex(term);
+        if (!regex) return [];
+
+        const text = model.getValue();
+        const matches = [];
+        let m;
+        regex.lastIndex = 0;
+        while ((m = regex.exec(text)) !== null) {
+            const start = model.getPositionAt(m.index);
+            const end = model.getPositionAt(m.index + m[0].length);
+            matches.push({
+                startLineNumber: start.lineNumber,
+                startColumn: start.column,
+                endLineNumber: end.lineNumber,
+                endColumn: end.column
+            });
+            if (m[0].length === 0) regex.lastIndex++; // 防死循环
+        }
+        return matches;
+    }
+
+    function highlight(matches, currentIndex) {
+        if (!editor) return;
+        const decorations = matches.map((m, i) => ({
+            range: new monaco.Range(m.startLineNumber, m.startColumn, m.endLineNumber, m.endColumn),
+            options: {
+                className: i === currentIndex ? 'currentFindMatch' : 'findMatch',
+                overviewRuler: {
+                    color: i === currentIndex ? '#ff8c00' : '#ffc800',
+                    position: monaco.editor.OverviewRulerLane.Center
+                },
+                minimap: {
+                    color: i === currentIndex ? '#ff8c00' : '#ffc800',
+                    position: monaco.editor.MinimapPosition.Inline
+                }
+            }
+        }));
+
+        findDecorations = editor.deltaDecorations(findDecorations || [], decorations);
+    }
+
+    function updateStatus() {
+        if (findMatches.length === 0) {
+            findStatus.textContent = findInput.value ? '无结果' : '';
+        } else {
+            findStatus.textContent = `${findCurrentIndex + 1}/${findMatches.length}`;
+        }
+        findPrevBtn.disabled = findMatches.length === 0;
+        findNextBtn.disabled = findMatches.length === 0;
+        replaceOneBtn.disabled = findMatches.length === 0;
+        replaceAllBtn.disabled = findMatches.length === 0;
+    }
+
+    function scrollToCurrent() {
+        if (!editor || findCurrentIndex < 0 || !findMatches[findCurrentIndex]) return;
+        const m = findMatches[findCurrentIndex];
+        editor.revealRangeInCenterIfOutsideViewport(
+            new monaco.Range(m.startLineNumber, m.startColumn, m.endLineNumber, m.endColumn)
+        );
+        editor.setSelection(new monaco.Selection(m.startLineNumber, m.startColumn, m.endLineNumber, m.endColumn));
+    }
+
+    function search(preserveCurrentIndex = false) {
+        if (!editor) return;
+        const oldIndex = findCurrentIndex;
+        findMatches = findMatches();
+        if (findMatches.length === 0) {
+            findCurrentIndex = -1;
+        } else if (preserveCurrentIndex && oldIndex >= 0) {
+            findCurrentIndex = Math.min(oldIndex, findMatches.length - 1);
+        } else {
+            // 定位到当前光标后的第一个匹配
+            const pos = editor.getPosition();
+            let found = 0;
+            for (let i = 0; i < findMatches.length; i++) {
+                const m = findMatches[i];
+                if (m.startLineNumber > pos.lineNumber ||
+                    (m.startLineNumber === pos.lineNumber && m.startColumn >= pos.column)) {
+                    found = i;
+                    break;
+                }
+            }
+            findCurrentIndex = found;
+        }
+        highlight(findMatches, findCurrentIndex);
+        updateStatus();
+        if (findCurrentIndex >= 0) scrollToCurrent();
+    }
+
+    function next() {
+        if (findMatches.length === 0) return;
+        findCurrentIndex = (findCurrentIndex + 1) % findMatches.length;
+        highlight(findMatches, findCurrentIndex);
+        updateStatus();
+        scrollToCurrent();
+    }
+
+    function prev() {
+        if (findMatches.length === 0) return;
+        findCurrentIndex = (findCurrentIndex - 1 + findMatches.length) % findMatches.length;
+        highlight(findMatches, findCurrentIndex);
+        updateStatus();
+        scrollToCurrent();
+    }
+
+    function replaceOne() {
+        if (!editor || findCurrentIndex < 0 || !findMatches[findCurrentIndex]) return;
+        const m = findMatches[findCurrentIndex];
+        const replacement = replaceInput.value;
+        editor.executeEdits('find-replace', [{
+            range: new monaco.Range(m.startLineNumber, m.startColumn, m.endLineNumber, m.endColumn),
+            text: replacement
+        }]);
+        search(true);
+    }
+
+    function replaceAll() {
+        if (!editor || findMatches.length === 0) return;
+        const replacement = replaceInput.value;
+        const edits = findMatches.map(m => ({
+            range: new monaco.Range(m.startLineNumber, m.startColumn, m.endLineNumber, m.endColumn),
+            text: replacement
+        }));
+        editor.executeEdits('find-replace-all', edits);
+        search(false);
+    }
+
+    function clear() {
+        if (editor && findDecorations) {
+            editor.deltaDecorations(findDecorations, []);
+            findDecorations = null;
+        }
+        findMatches = [];
+        findCurrentIndex = -1;
+        findStatus.textContent = '';
+    }
+
+    return {
+        search, next, prev, replaceOne, replaceAll, clear,
+        getOptions,
+        setCase(v) { caseSensitive = v; },
+        setWord(v) { wholeWord = v; },
+        setRegex(v) { useRegex = v; }
+    };
+})();
+
+// ===================================================================
+// 查找面板控制
+// ===================================================================
+function openFindPanel(showReplace = false) {
+    findPanel.classList.add('show');
+    if (showReplace) findPanel.classList.add('show-replace');
+
+    // 如果有选中文字，填入查找框
+    if (editor) {
+        const sel = editor.getSelection();
+        if (sel && !sel.isEmpty()) {
+            const text = editor.getModel().getValueInRange(sel);
+            if (text && !text.includes('\n')) {
+                findInput.value = text;
+            }
+        }
+    }
+
+    findInput.focus();
+    findInput.select();
+
+    if (findInput.value) {
+        FindReplace.search(false);
+    }
+}
+
+function closeFindPanel() {
+    findPanel.classList.remove('show');
+    findPanel.classList.remove('show-replace');
+    FindReplace.clear();
+    if (editor) editor.focus();
+}
+
+// 事件绑定
+findInput.addEventListener('input', () => FindReplace.search(false));
+findInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        if (e.shiftKey) FindReplace.prev();
+        else FindReplace.next();
+    } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeFindPanel();
+    }
+});
+replaceInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        FindReplace.replaceOne();
+    } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeFindPanel();
+    }
+});
+
+findNextBtn.addEventListener('click', () => FindReplace.next());
+findPrevBtn.addEventListener('click', () => FindReplace.prev());
+findCloseBtn.addEventListener('click', () => closeFindPanel());
+replaceOneBtn.addEventListener('click', () => FindReplace.replaceOne());
+replaceAllBtn.addEventListener('click', () => FindReplace.replaceAll());
+
+findExpandBtn.addEventListener('click', () => {
+    findPanel.classList.toggle('show-replace');
+    if (findPanel.classList.contains('show-replace')) {
+        replaceInput.focus();
+    }
+});
+
+toggleCaseBtn.addEventListener('click', () => {
+    toggleCaseBtn.classList.toggle('active');
+    FindReplace.setCase(toggleCaseBtn.classList.contains('active'));
+    FindReplace.search(true);
+});
+toggleWordBtn.addEventListener('click', () => {
+    toggleWordBtn.classList.toggle('active');
+    FindReplace.setWord(toggleWordBtn.classList.contains('active'));
+    FindReplace.search(true);
+});
+toggleRegexBtn.addEventListener('click', () => {
+    toggleRegexBtn.classList.toggle('active');
+    FindReplace.setRegex(toggleRegexBtn.classList.contains('active'));
+    FindReplace.search(true);
+});
+
+// ===================================================================
+// 自定义右键菜单
+// ===================================================================
+(function initContextMenu() {
+    const editorContainer = document.getElementById('monaco-editor');
+    let visible = false;
+    let longPressTimer = null;
+    let touchStartPos = { x: 0, y: 0 };
+    const LONG_PRESS_MS = 500;
+    const MOVE_TOLERANCE = 10;
+
+    function showMenu(x, y) {
+        submenuFind.classList.remove('show');
+
+        contextMenu.style.left = '0px';
+        contextMenu.style.top = '0px';
+        contextMenu.classList.add('show');
+
+        requestAnimationFrame(() => {
+            const rect = contextMenu.getBoundingClientRect();
+            let left = x;
+            let top = y;
+            if (left + rect.width > window.innerWidth - 8) left = window.innerWidth - rect.width - 8;
+            if (top + rect.height > window.innerHeight - 8) top = window.innerHeight - rect.height - 8;
+            if (left < 8) left = 8;
+            if (top < 8) top = 8;
+            contextMenu.style.left = left + 'px';
+            contextMenu.style.top = top + 'px';
+        });
+
+        updateMenuState();
+        visible = true;
+    }
+
+    function hideMenu() {
+        contextMenu.classList.remove('show');
+        submenuFind.classList.remove('show');
+        visible = false;
+    }
+
+    function updateMenuState() {
+        if (!editor) return;
+        const sel = editor.getSelection();
+        const hasSelection = sel && !sel.isEmpty();
+
+        const cutItem = contextMenu.querySelector('[data-action="cut"]');
+        const copyItem = contextMenu.querySelector('[data-action="copy"]');
+        if (cutItem) cutItem.classList.toggle('disabled', !hasSelection);
+        if (copyItem) copyItem.classList.toggle('disabled', !hasSelection);
+    }
+
+    editorContainer.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (editor) {
+            const pos = editor.getTargetAtClientPoint(e.clientX, e.clientY);
+            if (pos && pos.position) {
+                editor.setPosition(pos.position);
+                editor.focus();
+            }
+        }
+        showMenu(e.clientX, e.clientY);
+    });
+
+    editorContainer.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        const t = e.touches[0];
+        touchStartPos = { x: t.clientX, y: t.clientY };
+        clearTimeout(longPressTimer);
+        longPressTimer = setTimeout(() => {
+            if (editor) {
+                const pos = editor.getTargetAtClientPoint(t.clientX, t.clientY);
+                if (pos && pos.position) {
+                    editor.setPosition(pos.position);
+                    editor.focus();
+                }
+            }
+            showMenu(t.clientX, t.clientY);
+            if (navigator.vibrate) navigator.vibrate(15);
+        }, LONG_PRESS_MS);
+    }, { passive: true });
+
+    editorContainer.addEventListener('touchmove', (e) => {
+        if (e.touches.length !== 1) { clearTimeout(longPressTimer); return; }
+        const t = e.touches[0];
+        if (Math.hypot(t.clientX - touchStartPos.x, t.clientY - touchStartPos.y) > MOVE_TOLERANCE) {
+            clearTimeout(longPressTimer);
+        }
+    }, { passive: true });
+
+    editorContainer.addEventListener('touchend', () => clearTimeout(longPressTimer));
+    editorContainer.addEventListener('touchcancel', () => clearTimeout(longPressTimer));
+
+    document.addEventListener('mousedown', (e) => {
+        if (!visible) return;
+        if (!contextMenu.contains(e.target) && !submenuFind.contains(e.target)) hideMenu();
+    });
+    document.addEventListener('touchstart', (e) => {
+        if (!visible) return;
+        if (!contextMenu.contains(e.target) && !submenuFind.contains(e.target)) hideMenu();
+    }, { passive: true });
+    window.addEventListener('blur', hideMenu);
+    window.addEventListener('resize', hideMenu);
+
+    contextMenu.addEventListener('click', (e) => {
+        const item = e.target.closest('.menu-item');
+        if (!item || item.classList.contains('disabled')) return;
+        const action = item.dataset.action;
+
+        if (action === 'find-sub') {
+            const rect = item.getBoundingClientRect();
+            submenuFind.style.left = rect.right + 'px';
+            submenuFind.style.top = rect.top + 'px';
+            submenuFind.classList.add('show');
+            requestAnimationFrame(() => {
+                const subRect = submenuFind.getBoundingClientRect();
+                let left = rect.right;
+                let top = rect.top;
+                if (left + subRect.width > window.innerWidth - 8) left = rect.left - subRect.width;
+                if (top + subRect.height > window.innerHeight - 8) top = window.innerHeight - subRect.height - 8;
+                submenuFind.style.left = left + 'px';
+                submenuFind.style.top = top + 'px';
+            });
+            return;
+        }
+
+        executeAction(action);
+        hideMenu();
+    });
+
+    submenuFind.addEventListener('click', (e) => {
+        const item = e.target.closest('.menu-item');
+        if (!item) return;
+        executeAction(item.dataset.action);
+        hideMenu();
+    });
+
+    function executeAction(action) {
+        if (!editor) return;
+        try {
+            switch (action) {
+                case 'undo': editor.trigger('keyboard', 'undo', {}); break;
+                case 'redo': editor.trigger('keyboard', 'redo', {}); break;
+                case 'cut': editor.trigger('keyboard', 'editor.action.clipboardCutAction', {}); break;
+                case 'copy': editor.trigger('keyboard', 'editor.action.clipboardCopyAction', {}); break;
+                case 'paste':
+                    if (navigator.clipboard && navigator.clipboard.readText) {
+                        navigator.clipboard.readText().then(text => {
+                            const sel = editor.getSelection();
+                            editor.executeEdits('paste', [{ range: sel, text, forceMoveMarkers: true }]);
+                        }).catch(() => {
+                            editor.trigger('keyboard', 'editor.action.clipboardPasteAction', {});
+                        });
+                    } else {
+                        editor.trigger('keyboard', 'editor.action.clipboardPasteAction', {});
+                    }
+                    break;
+                case 'selectAll': editor.trigger('keyboard', 'editor.action.selectAll', {}); break;
+                case 'find': openFindPanel(false); break;
+                case 'findNext': FindReplace.next(); break;
+                case 'findPrev': FindReplace.prev(); break;
+                case 'replace': openFindPanel(true); break;
+                case 'run': runCode(); break;
+                case 'zoomIn': setFontSize(editorFontSize + 1); break;
+                case 'zoomOut': setFontSize(editorFontSize - 1); break;
+                case 'zoomReset': setFontSize(15); break;
+            }
+        } catch (err) {
+            console.warn('菜单操作失败:', err);
+        }
+    }
+})();
+
+// ===================================================================
+// 初始化 Monaco
+// ===================================================================
+require.config({
+    paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' }
+});
+
+require(['vs/editor/editor.main'], function () {
+    editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+        value: DEFAULT_CODES.python,
+        language: 'python',
+        theme: getMonacoTheme(),
+        fontSize: editorFontSize,
+        fontFamily: "'Consolas', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Courier New', monospace",
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        automaticLayout: true,
+        tabSize: 4,
+        insertSpaces: true,
+        renderWhitespace: 'selection',
+        smoothScrolling: true,
+        cursorBlinking: 'smooth',
+        cursorSmoothCaretAnimation: 'on',
+        padding: { top: 10, bottom: 10 },
+        quickSuggestions: { other: true, comments: false, strings: false },
+        suggestOnTriggerCharacters: true,
+        wordBasedSuggestions: 'currentDocument',
+        bracketPairColorization: { enabled: true },
+        guides: { bracketPairs: true, indentation: true },
+        lineNumbers: 'on',
+        glyphMargin: false,
+        folding: true,
+        scrollbar: { verticalScrollbarSize: 10, horizontalScrollbarSize: 10 },
+        mouseWheelZoom: false,
+        contextmenu: false,
+        // 禁用 Monaco 自带的查找
+        find: { addExtraSpaceOnTop: false }
+    });
+
+    updateFontSizeDisplay();
+    registerPythonCompletions(monaco);
+
+    // 禁用 Monaco 自带查找快捷键
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => openFindPanel(false));
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyH, () => openFindPanel(true));
+    editor.addCommand(monaco.KeyCode.F3, () => FindReplace.next());
+    editor.addCommand(monaco.KeyMod.Shift | monaco.KeyCode.F3, () => FindReplace.prev());
+    editor.addCommand(monaco.KeyCode.Escape, () => {
+        if (findPanel.classList.contains('show')) closeFindPanel();
+    });
+
+    editor.onDidChangeCursorPosition((e) => {
+        cursorInfo.textContent = `行 ${e.position.lineNumber}, 列 ${e.position.column}`;
+    });
+
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => runCode());
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Equal, () => setFontSize(editorFontSize + 1));
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Minus, () => setFontSize(editorFontSize - 1));
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Digit0, () => setFontSize(15));
+
+    // Tab
+    editor.addCommand(monaco.KeyCode.Tab, () => {
+        editor.trigger('keyboard', 'acceptSelectedSuggestion', {});
+    }, 'suggestWidgetVisible');
+    editor.addCommand(monaco.KeyCode.Tab, () => {
+        const sel = editor.getSelection();
+        if (!sel) return;
+        if (!sel.isEmpty()) editor.trigger('keyboard', 'editor.action.indentLines', {});
+        else editor.trigger('keyboard', 'type', { text: '    ' });
+    }, '!suggestWidgetVisible');
+    editor.addCommand(monaco.KeyMod.Shift | monaco.KeyCode.Tab, () => {
+        const sel = editor.getSelection();
+        if (!sel) return;
+        if (!sel.isEmpty()) editor.trigger('keyboard', 'editor.action.outdentLines', {});
+        else editor.trigger('keyboard', 'outdent', {});
+    });
+
+    editor.focus();
+    console.log('Monaco Editor 已就绪');
+});
+
+// ===================================================================
+// 切换语言
+// ===================================================================
+langSelect.addEventListener('change', () => {
+    const newLang = langSelect.value;
+    if (newLang === currentLang) return;
+
+    DEFAULT_CODES[currentLang] = editor.getValue();
+    currentLang = newLang;
+    const model = editor.getModel();
+    monaco.editor.setModelLanguage(model, LANG_MODE[newLang]);
+    editor.setValue(DEFAULT_CODES[newLang] || '');
+    editor.setPosition({ lineNumber: 1, column: 1 });
+
+    langInfo.textContent = LANG_LABEL[newLang];
+    titleText.textContent = LANG_LABEL[newLang] + ' Editor';
+    outputEl.innerHTML = `<span class="info">已切换到 ${LANG_LABEL[newLang]}，点击「运行」执行。</span>`;
+    updateRunButton();
+    // 切换语言时清空查找
+    FindReplace.clear();
+    findInput.value = '';
+});
+
+function updateRunButton() {
+    if (currentLang === 'python') runBtn.disabled = !pyodide;
+    else runBtn.disabled = false;
+}
+
+// ===================================================================
+// 主题切换
+// ===================================================================
+themeBtn.addEventListener('click', () => {
+    const html = document.documentElement;
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('hajipy-editor-theme', next);
+
+    if (editor && monaco) monaco.editor.setTheme(getMonacoTheme());
+    if (currentLang === 'markdown' && outputEl.querySelector('.md-body')) renderMarkdown(editor.getValue());
+    if (currentLang === 'json' && outputEl.querySelector('.json-tree')) runJSON();
+});
+
+// ===================================================================
+// 分隔条拖拽
+// ===================================================================
+(function initSplitter() {
+    let dragging = false;
+    let startY = 0;
+    let startEditorHeight = 0;
+    const container = document.getElementById('win-editor');
+
+    function setEditorRatio(ratio) {
+        const clamped = Math.max(0.1, Math.min(0.9, ratio));
+        editorPane.style.flex = `0 0 ${clamped * 100}%`;
+        outputPane.style.flex = `1 1 ${(1 - clamped) * 100}%`;
+        if (editor) editor.layout();
+    }
+
+    const saved = Number(localStorage.getItem('hajipy-editor-split-ratio'));
+    if (!isNaN(saved) && saved > 0 && saved < 1) setEditorRatio(saved);
+
+    function onDown(e) {
+        dragging = true;
+        startY = e.clientY ?? (e.touches && e.touches[0].clientY) ?? 0;
+        startEditorHeight = editorPane.getBoundingClientRect().height;
+        splitter.classList.add('dragging');
+        document.body.classList.add('resizing');
+        e.preventDefault();
+    }
+
+    function onMove(e) {
+        if (!dragging) return;
+        const clientY = e.clientY ?? (e.touches && e.touches[0].clientY) ?? 0;
+        const deltaY = clientY - startY;
+        const containerH = container.clientHeight;
+        const splitterH = splitter.getBoundingClientRect().height || 6;
+        const newH = startEditorHeight + deltaY;
+        const clamped = Math.max(80, Math.min(containerH - splitterH - 60, newH));
+        setEditorRatio(clamped / (containerH - splitterH));
+        e.preventDefault();
+    }
+
+    function onUp() {
+        if (!dragging) return;
+        dragging = false;
+        splitter.classList.remove('dragging');
+        document.body.classList.remove('resizing');
+        const containerH = container.clientHeight;
+        const splitterH = splitter.getBoundingClientRect().height || 6;
+        const ratio = editorPane.getBoundingClientRect().height / (containerH - splitterH);
+        localStorage.setItem('hajipy-editor-split-ratio', String(ratio));
+        if (editor) editor.layout();
+    }
+
+    splitter.addEventListener('mousedown', onDown);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    splitter.addEventListener('touchstart', onDown, { passive: false });
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onUp);
+    document.addEventListener('touchcancel', onUp);
+    window.addEventListener('resize', () => { if (editor) editor.layout(); });
+    splitter.addEventListener('dblclick', () => {
+        setEditorRatio(0.6);
+        localStorage.setItem('hajipy-editor-split-ratio', '0.6');
+    });
+})();
+
+// ===================================================================
+// 缩放
+// ===================================================================
+(function initZoom() {
+    const el = document.getElementById('monaco-editor');
+
+    el.addEventListener('wheel', (e) => {
+        if (!e.ctrlKey && !e.metaKey) return;
+        e.preventDefault();
+        e.stopPropagation();
+        setFontSize(editorFontSize + (e.deltaY > 0 ? -1 : 1));
+    }, { passive: false });
+
+    let gStartFont = editorFontSize;
+    el.addEventListener('gesturestart', (e) => { e.preventDefault(); gStartFont = editorFontSize; }, { passive: false });
+    el.addEventListener('gesturechange', (e) => {
+        e.preventDefault();
+        setFontSize(gStartFont * (e.scale || 1), false);
+        showZoomToast(editorFontSize + 'px');
+    }, { passive: false });
+    el.addEventListener('gestureend', (e) => { e.preventDefault(); showZoomToast(editorFontSize + 'px'); }, { passive: false });
+
+    let pinchStart = 0, pinchFont = editorFontSize, pinching = false;
+    function dist(touches) {
+        return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
+    }
+    el.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) { pinching = true; pinchStart = dist(e.touches); pinchFont = editorFontSize; }
+    }, { passive: true });
+    el.addEventListener('touchmove', (e) => {
+        if (!pinching || e.touches.length !== 2) return;
+        e.preventDefault();
+        const d = dist(e.touches);
+        if (pinchStart > 0) { setFontSize(pinchFont * (d / pinchStart), false); showZoomToast(editorFontSize + 'px'); }
+    }, { passive: false });
+    el.addEventListener('touchend', (e) => {
+        if (e.touches.length < 2 && pinching) { pinching = false; showZoomToast(editorFontSize + 'px'); }
+    });
+    el.addEventListener('touchcancel', () => { pinching = false; });
+
+    document.addEventListener('keydown', (e) => {
+        if (!(e.ctrlKey || e.metaKey)) return;
+        const a = document.activeElement;
+        if (a && a.tagName === 'INPUT') return;
+        if (e.key === '=' || e.key === '+') { e.preventDefault(); setFontSize(editorFontSize + 1); }
+        else if (e.key === '-' || e.key === '_') { e.preventDefault(); setFontSize(editorFontSize - 1); }
+        else if (e.key === '0') { e.preventDefault(); setFontSize(15); }
+    });
+})();
+
+// ===================================================================
+// Pyodide
+// ===================================================================
+async function waitForPyodide(timeout = 15000) {
+    const start = Date.now();
+    while (typeof loadPyodide !== 'function') {
+        if (Date.now() - start > timeout) throw new Error('Pyodide 加载超时');
+        await new Promise(r => setTimeout(r, 100));
+    }
+}
+
+(async function initPyodide() {
+    try {
+        await waitForPyodide();
+        pyodide = await loadPyodide();
+        await pyodide.runPythonAsync(`
+import sys, io
+sys.stdout = io.StringIO()
+sys.stderr = io.StringIO()
+`);
+        if (currentLang === 'python') {
+            outputEl.textContent = 'Python 已就绪，点击「运行」执行代码。';
+            setStatus('就绪', 'ready');
+        }
+        updateRunButton();
+    } catch (e) {
+        outputEl.innerHTML = `<span class="error">Pyodide 加载失败：${e.message}</span>`;
+        setStatus('Python 加载失败', 'error');
+        updateRunButton();
+    }
+})();
+
+// ===================================================================
+// 运行入口
+// ===================================================================
+async function runCode() {
+    if (!editor) return;
+    if (currentLang === 'python') await runPython();
+    else if (currentLang === 'javascript') runJavaScript();
+    else if (currentLang === 'html') runHTML();
+    else if (currentLang === 'markdown') renderMarkdown(editor.getValue());
+    else if (currentLang === 'json') runJSON();
+}
+
+async function runPython() {
+    if (!pyodide) { outputEl.innerHTML = '<span class="error">Pyodide 尚未加载完成</span>'; return; }
+    runBtn.disabled = true; setStatus('运行中...', 'loading'); outputEl.innerHTML = '';
+    const code = editor.getValue();
+    try {
+        await pyodide.runPythonAsync(`import sys, io\nsys.stdout = io.StringIO()\nsys.stderr = io.StringIO()\n`);
+        const wrapped = `import traceback\ntry:\n${code.split('\n').map(l => '    ' + l).join('\n')}\nexcept Exception:\n    traceback.print_exc()\n`;
+        await pyodide.runPythonAsync(wrapped);
+        const stdout = await pyodide.runPythonAsync('sys.stdout.getvalue()');
+        const stderr = await pyodide.runPythonAsync('sys.stderr.getvalue()');
+        let html = '';
+        if (stdout) html += escapeHtml(stdout);
+        if (stderr) html += `<span class="error">${escapeHtml(stderr)}</span>`;
+        outputEl.innerHTML = html || '<span class="info">（无输出）</span>';
+        setStatus(stderr ? '运行出错' : '运行完成', stderr ? 'error' : 'ready');
+    } catch (e) {
+        outputEl.innerHTML = `<span class="error">${escapeHtml(e.message || String(e))}</span>`;
+        setStatus('运行出错', 'error');
+    } finally { runBtn.disabled = false; }
+}
+
+function runJavaScript() {
+    runBtn.disabled = true; setStatus('运行中...', 'loading'); outputEl.innerHTML = '';
+    const code = editor.getValue();
+    const logs = [];
+    const origLog = console.log, origErr = console.error, origWarn = console.warn, origInfo = console.info;
+    function capture(type) {
+        return (...args) => {
+            const text = args.map(a => {
+                try { return typeof a === 'object' && a !== null ? JSON.stringify(a, null, 2) : String(a); }
+                catch { return String(a); }
+            }).join(' ');
+            logs.push({ type, text });
+        };
+    }
+    console.log = capture('log'); console.error = capture('error');
+    console.warn = capture('warn'); console.info = capture('info');
+    try {
+        const result = new Function(code)();
+        console.log = origLog; console.error = origErr; console.warn = origWarn; console.info = origInfo;
+        let html = '';
+        logs.forEach(l => { html += `<span class="${l.type === 'error' ? 'error' : ''}">${escapeHtml(l.text)}\n</span>`; });
+        if (result !== undefined) html += `<span class="success">=> ${escapeHtml(String(result))}</span>\n`;
+        outputEl.innerHTML = html || '<span class="info">（无输出）</span>';
+        setStatus('运行完成', 'ready');
+    } catch (e) {
+        console.log = origLog; console.error = origErr; console.warn = origWarn; console.info = origInfo;
+        let html = '';
+        logs.forEach(l => { html += `<span class="${l.type === 'error' ? 'error' : ''}">${escapeHtml(l.text)}\n</span>`; });
+        html += `<span class="error">${escapeHtml(e.name + ': ' + e.message)}</span>`;
+        outputEl.innerHTML = html;
+        setStatus('运行出错', 'error');
+    } finally { runBtn.disabled = false; }
+}
+
+function runHTML() {
+    runBtn.disabled = true; setStatus('运行中...', 'loading');
+    const iframe = document.createElement('iframe');
+    iframe.className = 'html-preview';
+    iframe.setAttribute('sandbox', 'allow-scripts allow-modals allow-forms allow-popups');
+    iframe.srcdoc = editor.getValue();
+    outputEl.innerHTML = '';
+    outputEl.appendChild(iframe);
+    setStatus('预览中', 'ready');
+    runBtn.disabled = false;
+}
+
+function renderMarkdown(src) {
+    runBtn.disabled = true; setStatus('渲染中...', 'loading');
+    try {
+        outputEl.innerHTML = `<div class="md-body">${markdownToHtml(src)}</div>`;
+        setStatus('渲染完成', 'ready');
+    } catch (e) {
+        outputEl.innerHTML = `<span class="error">Markdown 渲染出错：${escapeHtml(e.message)}</span>`;
+        setStatus('渲染出错', 'error');
+    } finally { runBtn.disabled = false; }
+}
+
+function markdownToHtml(md) {
+    let html = md;
+    const codeBlocks = [];
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (m, lang, code) => {
+        const idx = codeBlocks.length;
+        codeBlocks.push(`<pre><code>${escapeHtml(code.replace(/\n$/, ''))}</code></pre>`);
+        return `\u0000CB${idx}\u0000`;
+    });
+    html = escapeHtml(html);
+    html = html.replace(/^###### (.*)$/gm, '<h6>$1</h6>')
+        .replace(/^##### (.*)$/gm, '<h5>$1</h5>')
+        .replace(/^#### (.*)$/gm, '<h4>$1</h4>')
+        .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.*)$/gm, '<h1>$1</h1>')
+        .replace(/^---+$/gm, '<hr>')
+        .replace(/^> (.*)$/gm, '<blockquote>$1</blockquote>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+        .replace(/~~([^~]+)~~/g, '<del>$1</del>')
+        .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+        .replace(/^[\*\-] (.*)$/gm, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`);
+    const lines = html.split('\n');
+    const result = [];
+    let para = [];
+    function flush() { if (para.length) { result.push(`<p>${para.join('<br>')}</p>`); para = []; } }
+    for (const line of lines) {
+        const t = line.trim();
+        if (!t) flush();
+        else if (/^<(h[1-6]|ul|ol|li|blockquote|pre|hr|img|table)/.test(t) || t.startsWith('\u0000CB')) { flush(); result.push(line); }
+        else para.push(line);
+    }
+    flush();
+    html = result.join('\n').replace(/\u0000CB(\d+)\u0000/g, (m, i) => codeBlocks[Number(i)]);
+    return html;
+}
+
+function runJSON() {
+    runBtn.disabled = true; setStatus('解析中...', 'loading');
+    const src = editor.getValue();
+    try {
+        const data = JSON.parse(src);
+        const formatted = JSON.stringify(data, null, 2);
+        outputEl.innerHTML = `
+            <div class="info" style="margin-bottom:10px;">✓ JSON 有效</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;height:calc(100% - 30px);">
+                <div>
+                    <div class="info" style="margin-bottom:6px;font-size:12px;">格式化</div>
+                    <pre style="margin:0;padding:10px;background:var(--output-code-bg);border-radius:6px;overflow:auto;height:calc(100% - 28px);font-size:13px;">${escapeHtml(formatted)}</pre>
+                </div>
+                <div>
+                    <div class="info" style="margin-bottom:6px;font-size:12px;">树形视图</div>
+                    <div style="padding:10px;background:var(--output-code-bg);border-radius:6px;overflow:auto;height:calc(100% - 28px);" class="json-tree">${jsonToTree(data)}</div>
+                </div>
+            </div>`;
+        setStatus('JSON 有效', 'ready');
+    } catch (e) {
+        outputEl.innerHTML = `<span class="error">JSON 解析错误：${escapeHtml(e.message)}</span>`;
+        setStatus('JSON 错误', 'error');
+    } finally { runBtn.disabled = false; }
+}
+
+function jsonToTree(data) {
+    function val(v) {
+        if (v === null) return '<span class="json-null">null</span>';
+        if (typeof v === 'string') return `<span class="json-string">"${escapeHtml(v)}"</span>`;
+        if (typeof v === 'number') return `<span class="json-number">${v}</span>`;
+        if (typeof v === 'boolean') return `<span class="json-boolean">${v}</span>`;
+        if (Array.isArray(v)) {
+            if (v.length === 0) return '<span class="json-bracket">[]</span>';
+            return `<span class="json-bracket">[</span><ul>${v.map(i => `<li>${val(i)}</li>`).join('')}</ul><span class="json-bracket">]</span>`;
+        }
+        if (typeof v === 'object') {
+            const keys = Object.keys(v);
+            if (keys.length === 0) return '<span class="json-bracket">{}</span>';
+            return `<span class="json-bracket">{</span><ul>${keys.map(k => `<li><span class="json-key">"${escapeHtml(k)}"</span>: ${val(v[k])}</li>`).join('')}</ul><span class="json-bracket">}</span>`;
+        }
+        return String(v);
+    }
+    return `<ul>${val(data)}</ul>`;
+}
+
+// ===================================================================
+// Python 补全
+// ===================================================================
+function registerPythonCompletions(monaco) {
+    const BUILTINS = [
+        'abs', 'all', 'any', 'ascii', 'bin', 'bool', 'bytearray', 'bytes',
+        'callable', 'chr', 'classmethod', 'compile', 'complex', 'delattr', 'dict', 'dir',
+        'divmod', 'enumerate', 'eval', 'exec', 'filter', 'float', 'format', 'frozenset',
+        'getattr', 'globals', 'hasattr', 'hash', 'help', 'hex', 'id', 'input', 'int',
+        'isinstance', 'issubclass', 'iter', 'len', 'list', 'locals', 'map', 'max',
+        'min', 'next', 'object', 'oct', 'open', 'ord', 'pow', 'print',
+        'range', 'repr', 'reversed', 'round', 'set', 'setattr', 'slice',
+        'sorted', 'staticmethod', 'str', 'sum', 'super', 'tuple', 'type', 'vars', 'zip'
+    ];
+    const KEYWORDS = [
+        'and', 'as', 'assert', 'async', 'await', 'break', 'class', 'continue', 'def',
+        'del', 'elif', 'else', 'except', 'finally', 'for', 'from', 'global', 'if',
+        'import', 'in', 'is', 'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise',
+        'return', 'try', 'while', 'with', 'yield', 'True', 'False', 'None'
+    ];
+    monaco.languages.registerCompletionItemProvider('python', {
+        triggerCharacters: ['.'],
+        provideCompletionItems: function (model, position) {
+            const word = model.getWordUntilPosition(position);
+            const range = {
+                startLineNumber: position.lineNumber,
+                endLineNumber: position.lineNumber,
+                startColumn: word.startColumn,
+                endColumn: word.endColumn
+            };
+            const suggestions = [];
+            KEYWORDS.forEach(kw => suggestions.push({
+                label: kw, kind: monaco.languages.CompletionItemKind.Keyword, insertText: kw, range
+            }));
+            BUILTINS.forEach(fn => suggestions.push({
+                label: fn, kind: monaco.languages.CompletionItemKind.Function,
+                insertText: fn + '($0)',
+                insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                range
+            }));
+            return { suggestions };
+        }
+    });
+}
+
+runBtn.onclick = runCode;
+</script>
+
+</body>
+</html>
